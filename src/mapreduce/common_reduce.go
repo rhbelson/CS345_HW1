@@ -3,15 +3,11 @@ package mapreduce
 import (
 	//"hash/fnv"
     "io/ioutil"
-    //"os"
+    "os"
     "fmt"
     //"log"
     "encoding/json"
 )
-type iKeyValue strucut {
-    Key string
-    Value []string
-}
 
 func doReduce(
 	jobName string, // the name of the whole MapReduce job
@@ -59,33 +55,39 @@ func doReduce(
 	//
 
     //create generic json
-    var intermediate_struct:=map[string][]string
+    var intermediate_struct map[string][]string
 
+    //fmt.Println("nMap ", nMap)
     for mapNumber := 0; mapNumber < nMap; mapNumber ++ {
         inFile := reduceName(jobName, mapNumber, reduceTask)
+        //fmt.Println("mapNumber: ", mapNumber, " inFile: ", inFile)
         dat, err := ioutil.ReadFile(inFile)
         e_check(err)
-        tmpJson := KeyValue{}
+        var tmpJson []KeyValue
+        //fmt.Println(dat)
         json.Unmarshal([]byte(dat), &tmpJson)
         fmt.Println(tmpJson)
 
         //Write to giant json file
         for _, kv:= range tmpJson {
             //Add each key value pair
+            intermediate_struct[kv.Key] = append(intermediate_struct[kv.Key],kv.Value)
+            /*
             if !(intermediate_struct[kv.Key]) {
-                intermediate_struct[kv.Key] = [kv.Value]
+                intermediate_struct[kv.Key] := [kv.Value]
             }
             else {
                 intermediate_struct[kv.Key] = append(intermediate_struct[kv.Key],kv.Value)
-            }
+            }*/
         }
     }
 
-    outputs=[]string
+    var outputs []string
     //After finishing building intermediate_struct, call reduceF on every key
-    for _, k := range intermediate_struct {
-        reduce_output=reduceF(k,intermediate_struct[k])
-        outputs=append(outputs,reduce_output)
+    for k, v := range intermediate_struct {
+        reduce_output := reduceF(k, v)
+        outputs = append(outputs, reduce_output)
+        //fmt.Println("k:", k, "v:", v)
     }
 
 
@@ -93,7 +95,7 @@ func doReduce(
     var jsonData []byte
     jsonData, err := json.Marshal(&outputs)
     e_check(err)
-    f, err := os.OpenFile(outFile, os.O_APPEND|os.O_WRONLY, 0600)
+    f, err := os.OpenFile(outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
     e_check(err)
     _, err = f.WriteString(string(jsonData))
     e_check(err)

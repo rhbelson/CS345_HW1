@@ -73,7 +73,7 @@ func doMap(
         var jsonData []byte
         jsonData, err := json.Marshal(&kv)
         e_check(err)
-        f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0600)
+        f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
         e_check(err)
         _, err = f.WriteString(string(jsonData))
         e_check(err)
