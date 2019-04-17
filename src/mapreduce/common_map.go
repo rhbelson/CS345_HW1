@@ -4,7 +4,7 @@ import (
 	"hash/fnv"
     "io/ioutil"
     //"os"
-    //"fmt"
+    "fmt"
     //"log"
     "encoding/json"
 )
@@ -66,17 +66,14 @@ func doMap(
     mapF_output := mapF(inFile, string(dat))
 
     for _, kv := range mapF_output {
-        r := ihash(string(&kv)) % nReduce
+        fmt.Println(kv.Key)
+        r := ihash(kv.Key) % nReduce
         file:=reduceName(jobName, mapTask, r)
-        enc := json.NewEncoder(file)
-        //f, err := os.Open(reduceName(jobName, mapTask, r))
-        //e_check(err)
-        //enc := json.NewEncoder(f)
-        //check(err)
-        //err = enc.Encode(v)
-        //defer f.Close()
-
-        err = ioutil.WriteFile(file, enc.Encode(&kv), 0644)
+        var jsonData []byte
+        jsonData, err := json.Marshal(&kv)
+        e_check(err)
+        err = ioutil.WriteFile(file, jsonData, 0644)
+        e_check(err)
     }
 
 }
