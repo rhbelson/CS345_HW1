@@ -3,8 +3,8 @@ package mapreduce
 import (
 	"hash/fnv"
     "io/ioutil"
-    //"os"
-    "fmt"
+    "os"
+    //"fmt"
     //"log"
     "encoding/json"
 )
@@ -66,14 +66,18 @@ func doMap(
     mapF_output := mapF(inFile, string(dat))
 
     for _, kv := range mapF_output {
-        fmt.Println(kv.Key)
+        //fmt.Println(kv.Key)
+        //fmt.Println(kv.Value)
         r := ihash(kv.Key) % nReduce
-        file:=reduceName(jobName, mapTask, r)
+        file := reduceName(jobName, mapTask, r)
         var jsonData []byte
         jsonData, err := json.Marshal(&kv)
         e_check(err)
-        err = ioutil.WriteFile(file, jsonData, 0644)
+        f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0600)
         e_check(err)
+        _, err = f.WriteString(string(jsonData))
+        e_check(err)
+        f.Close()
     }
 
 }

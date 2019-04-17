@@ -1,5 +1,18 @@
 package mapreduce
 
+import (
+	//"hash/fnv"
+    "io/ioutil"
+    //"os"
+    "fmt"
+    //"log"
+    "encoding/json"
+)
+type iKeyValue strucut {
+    Key string
+    Value []string
+}
+
 func doReduce(
 	jobName string, // the name of the whole MapReduce job
 	reduceTask int, // which reduce task this is
@@ -44,4 +57,53 @@ func doReduce(
 	//
 	// Your code here (Part I).
 	//
+
+    //create generic json
+    var intermediate_struct:=map[string][]string
+
+    for mapNumber := 0; mapNumber < nMap; mapNumber ++ {
+        inFile := reduceName(jobName, mapNumber, reduceTask)
+        dat, err := ioutil.ReadFile(inFile)
+        e_check(err)
+        tmpJson := KeyValue{}
+        json.Unmarshal([]byte(dat), &tmpJson)
+        fmt.Println(tmpJson)
+
+        //Write to giant json file
+        for _, kv:= range tmpJson {
+            //Add each key value pair
+            if !(intermediate_struct[kv.Key]) {
+                intermediate_struct[kv.Key] = [kv.Value]
+            }
+            else {
+                intermediate_struct[kv.Key] = append(intermediate_struct[kv.Key],kv.Value)
+            }
+        }
+    }
+
+    outputs=[]string
+    //After finishing building intermediate_struct, call reduceF on every key
+    for _, k := range intermediate_struct {
+        reduce_output=reduceF(k,intermediate_struct[k])
+        outputs=append(outputs,reduce_output)
+    }
+
+
+    //Write to file
+    var jsonData []byte
+    jsonData, err := json.Marshal(&outputs)
+    e_check(err)
+    f, err := os.OpenFile(outFile, os.O_APPEND|os.O_WRONLY, 0600)
+    e_check(err)
+    _, err = f.WriteString(string(jsonData))
+    e_check(err)
+    f.Close()
+
+
+
+
+
+    //Now that we have json file with a ton of redundant keys and values
+    //Get the same keys and reduce them
+
 }
