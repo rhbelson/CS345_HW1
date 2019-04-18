@@ -2,9 +2,11 @@ package mapreduce
 
 import (
 	//"hash/fnv"
-    "io/ioutil"
+    //"io/ioutil"
     "os"
-    "fmt"
+    "io"
+    //"fmt"
+    //"strings"
     //"log"
     "encoding/json"
 )
@@ -54,58 +56,44 @@ func doReduce(
 	// Your code here (Part I).
 	//
 
-    //create generic json
     var intermediate_struct map[string][]string
+    intermediate_struct = make(map[string][]string)
 
-    //fmt.Println("nMap ", nMap)
     for mapNumber := 0; mapNumber < nMap; mapNumber ++ {
         inFile := reduceName(jobName, mapNumber, reduceTask)
-        //fmt.Println("mapNumber: ", mapNumber, " inFile: ", inFile)
-        dat, err := ioutil.ReadFile(inFile)
+        file, err := os.Open(inFile)
         e_check(err)
         var tmpJson []KeyValue
-        //fmt.Println(dat)
-        json.Unmarshal([]byte(dat), &tmpJson)
-        fmt.Println(tmpJson)
+
+        dec := json.NewDecoder(file)
+    	for {
+    		var tmp KeyValue
+    		if err := dec.Decode(&tmp); err == io.EOF {
+    			break
+    		} else if err != nil {
+    			panic(err)
+    		}
+    		//fmt.Printf("%s: %s\n", tmp.Key, tmp.Value)
+            tmpJson = append(tmpJson, tmp)
+    	}
+        file.Close()
 
         //Write to giant json file
-        for _, kv:= range tmpJson {
-            //Add each key value pair
+        for _, kv := range tmpJson {
             intermediate_struct[kv.Key] = append(intermediate_struct[kv.Key],kv.Value)
-            /*
-            if !(intermediate_struct[kv.Key]) {
-                intermediate_struct[kv.Key] := [kv.Value]
-            }
-            else {
-                intermediate_struct[kv.Key] = append(intermediate_struct[kv.Key],kv.Value)
-            }*/
         }
     }
+    //fmt.Println("Before reduceF")
 
-    var outputs []string
-    //After finishing building intermediate_struct, call reduceF on every key
-    for k, v := range intermediate_struct {
-        reduce_output := reduceF(k, v)
-        outputs = append(outputs, reduce_output)
-        //fmt.Println("k:", k, "v:", v)
-    }
-
-
-    //Write to file
-    var jsonData []byte
-    jsonData, err := json.Marshal(&outputs)
+    out, err := os.Create(outFile)
+    //fmt.Println(outFile)
     e_check(err)
-    f, err := os.OpenFile(outFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-    e_check(err)
-    _, err = f.WriteString(string(jsonData))
-    e_check(err)
-    f.Close()
+    enc := json.NewEncoder(out)
+	for k,v := range intermediate_struct {
+		enc.Encode(KeyValue{k, reduceF(k, v)})
+        //fmt.Println("k ", k, " reduce: ", reduceF(k, v))
+	}
+	out.Close()
 
-
-
-
-
-    //Now that we have json file with a ton of redundant keys and values
-    //Get the same keys and reduce them
 
 }
