@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mapreduce"
     "strings"
+		"strconv"
 	"os"
 )
 
@@ -31,11 +32,16 @@ func mapF(filename string, contents string) []mapreduce.KeyValue {
 // any map task.
 //
 func reduceF(key string, values []string) string {
-    res := len(values)
+		// fmt.Println(key)
+		// var count int =0
+		// fmt.Println(len(values))
+
+    // res := len(values)
     //for _, e := range values {
 	//	debug("Reduce %s %v\n", key, e)
 	//}
-	return string(res)
+	// return string(len(values))
+	return strconv.Itoa(len(values))
 }
 
 // Can be run in 3 ways:
