@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"mapreduce"
+    "strings"
 	"os"
 )
 
@@ -14,7 +15,14 @@ import (
 // of key/value pairs.
 //
 func mapF(filename string, contents string) []mapreduce.KeyValue {
-	// Your code here (Part 1B).
+    //debug("Map %v\n", value)
+    var res []mapreduce.KeyValue
+	words := strings.Fields(contents)
+	for _, w := range words {
+		kv := mapreduce.KeyValue{w, "1"}
+		res = append(res, kv)
+	}
+	return res
 }
 
 //
@@ -23,7 +31,11 @@ func mapF(filename string, contents string) []mapreduce.KeyValue {
 // any map task.
 //
 func reduceF(key string, values []string) string {
-	// Your code here (Part 1B).
+    res := len(values)
+    //for _, e := range values {
+	//	debug("Reduce %s %v\n", key, e)
+	//}
+	return string(res)
 }
 
 // Can be run in 3 ways:
