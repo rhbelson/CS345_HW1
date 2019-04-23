@@ -65,21 +65,36 @@ func doMap(
 
     mapF_output := mapF(inFile, string(dat))
 
+    var kvMap map[int][]KeyValue
+    kvMap = make(map[int][]KeyValue)
+
     for _, kv := range mapF_output {
         //fmt.Println(kv.Key)
         //fmt.Println(kv.Value)
         r := ihash(kv.Key) % nReduce
-        file := reduceName(jobName, mapTask, r)
-        var jsonData []byte
-        jsonData, err := json.Marshal(&kv)
-        e_check(err)
-        f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-        e_check(err)
-        _, err = f.WriteString(string(jsonData))
-        e_check(err)
-        f.Close()
+        //file := reduceName(jobName, mapTask, r)
+        //var jsonData []byte
+        //jsonData, err := json.Marshal(&kv)
+        //e_check(err)
+        kvMap[r] = append(kvMap[r], kv)
+        //f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+        //e_check(err)
+        //_, err = f.WriteString(string(jsonData))
+        //e_check(err)
+        //f.Close()
     }
 
+    for i := 0; i < nReduce; i++ {
+        file := reduceName(jobName, mapTask, i)
+        f, err := os.Create(file)
+        e_check(err)
+        enc := json.NewEncoder(f)
+        for _, kv := range kvMap[i] {
+            err := enc.Encode(&kv)
+            e_check(err)
+        }
+        f.Close()
+    }
 }
 
 func ihash(s string) int {
