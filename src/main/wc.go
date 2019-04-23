@@ -18,7 +18,8 @@ import (
 //
 func mapF(filename string, contents string) []mapreduce.KeyValue {
 	//Goal: split the string using f(c) and return slices of 'contents' variable 
-	words := strings.FieldsFunc(contents, notLetter)
+	words := strings.FieldsFunc(contents, contiguousLetters)
+	//A word is any contiguous sequence of letters, as determined by unicode.IsLetter
 
 	var res []mapreduce.KeyValue
 	for _, w := range words {
@@ -47,7 +48,7 @@ func reduceF(key string, values []string) string {
 }
 
 
-func notLetter(r rune) bool {
+func contiguousLetters(r rune) bool {
 		return !unicode.IsLetter(r)
 	}
 
