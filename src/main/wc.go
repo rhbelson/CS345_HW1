@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"mapreduce"
     "strings"
-		"strconv"
+	"strconv"
+	"unicode"
 	"os"
 )
 
@@ -16,11 +17,12 @@ import (
 // of key/value pairs.
 //
 func mapF(filename string, contents string) []mapreduce.KeyValue {
-    //debug("Map %v\n", value)
-    var res []mapreduce.KeyValue
-	words := strings.Fields(contents)
+	//Goal: split the string using f(c) and return slices of 'contents' variable 
+	words := strings.FieldsFunc(contents, notLetter)
+
+	var res []mapreduce.KeyValue
 	for _, w := range words {
-		kv := mapreduce.KeyValue{w, "1"}
+		kv := mapreduce.KeyValue{w,"1"}
 		res = append(res, kv)
 	}
 	return res
@@ -43,6 +45,11 @@ func reduceF(key string, values []string) string {
 	// return string(len(values))
 	return strconv.Itoa(len(values))
 }
+
+
+func notLetter(r rune) bool {
+		return !unicode.IsLetter(r)
+	}
 
 // Can be run in 3 ways:
 // 1) Sequential (e.g., go run wc.go master sequential x1.txt .. xN.txt)
