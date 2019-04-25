@@ -37,7 +37,7 @@ func schedule(jobName string, mapFiles []string, nReduce int, phase jobPhase, re
 		task_args:=DoTaskArgs{jobName,mapFiles[taskNumber],mapPhase,taskNumber,n_other}
 
 		//Send RPC to worker
-		go call(worker_rpc_address, Worker.DoTask,task_args, nil)
+		go call(worker_rpc_address, "Worker.DoTask",task_args, nil)
 
 }
 
