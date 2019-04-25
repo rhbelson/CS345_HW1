@@ -27,8 +27,21 @@ func schedule(jobName string, mapFiles []string, nReduce int, phase jobPhase, re
 
 	// All ntasks tasks have to be scheduled on workers. Once all tasks
 	// have completed successfully, schedule() should return.
-	//
 	// Your code here (Part 2, 2B).
-	//
+	//If it's a map task (how can we be sure?)
+	for taskNumber := 0; taskNumber < ntasks; taskNumber ++ {
+		//Reading registerChan argument
+		worker_rpc_address := <-registerChan
+
+		//RPC's arguments are defined by DoTaskArgs in mapreduce/common_rpc.go
+		task_args:=DoTaskArgs{jobName,mapFiles[taskNumber],mapPhase,taskNumber,n_other}
+
+		//Send RPC to worker
+		go call(worker_rpc_address, Worker.DoTask,task_args, nil)
+
+}
+
+
+
 	fmt.Printf("Schedule: %v done\n", phase)
 }
