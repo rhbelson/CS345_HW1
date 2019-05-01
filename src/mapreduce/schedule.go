@@ -70,9 +70,19 @@ func pull_workers(c chan string, avaliable_worker chan string) {
 func start_worker(worker string, rpcname string, task_args interface{},
                   reply interface{}, avaliable_worker chan string, wg *sync.WaitGroup) {
     fmt.Printf("Worker %v is assigned\n", worker)
-    call(worker, "Worker.DoTask", task_args, reply)
-    wg.Done()
-    fmt.Printf("Putting worker %v in avaliable  ", worker)
-    avaliable_worker <- worker
-    //wg.Done()
+    ret := call(worker, "Worker.DoTask", task_args, reply)
+    if(ret) {
+        wg.Done()
+        fmt.Printf("Putting worker %v in avaliable  \n", worker)
+        avaliable_worker <- worker
+    } else {
+        fmt.Println("Task failed")
+        new_worker := <- avaliable_worker
+        fmt.Println("Found new worker!!!")
+        fmt.Println(new_worker)
+        wg.Add(1)
+        go start_worker(new_worker, rpcname, task_args, nil,
+                        avaliable_worker, wg)
+        wg.Done()
+    }
 }
