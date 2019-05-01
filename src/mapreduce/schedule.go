@@ -3,8 +3,6 @@ package mapreduce
 import "fmt"
 import "sync"
 
-var worker_list = make([]string, 0)
-
 //
 // schedule() starts and waits for all tasks in the given phase (mapPhase
 // or reducePhase). the mapFiles argument holds the names of the files that
@@ -43,30 +41,27 @@ func schedule(jobName string, mapFiles []string, nReduce int, phase jobPhase, re
     taskNumber := 0
     for taskNumber < ntasks {
         worker := <- avaliable_worker
-        if(len(worker) > 0) {
-            var task_args interface{}
-            if(isMap) {
-                task_args = DoTaskArgs{jobName, mapFiles[taskNumber], mapPhase, taskNumber, n_other}
-            } else {
-                task_args = DoTaskArgs{jobName, "", reducePhase, taskNumber, n_other}
-            }
-
-            wg.Add(1)
-            fmt.Println(task_args)
-            go start_worker(worker, "Worker.DoTask", task_args, nil,
-                            avaliable_worker, &wg)
-            taskNumber = taskNumber + 1
+        var task_args interface{}
+        if(isMap) {
+            task_args = DoTaskArgs{jobName, mapFiles[taskNumber], mapPhase, taskNumber, n_other}
+        } else {
+            task_args = DoTaskArgs{jobName, "", reducePhase, taskNumber, n_other}
         }
+
+        wg.Add(1)
+        fmt.Println(task_args)
+        go start_worker(worker, "Worker.DoTask", task_args, nil,
+                        avaliable_worker, &wg)
+        taskNumber = taskNumber + 1
     }
     fmt.Printf("Start waiting taskNum: %d\n", taskNumber)
-    //wg.Wait()
+    wg.Wait()
 	fmt.Printf("Schedule: %v done\n", phase)
 }
 
 func pull_workers(c chan string, avaliable_worker chan string) {
   for {
     worker := <- c
-    worker_list = append(worker_list, worker)
     fmt.Printf("Putting worker %v in avaliable\n", worker)
     avaliable_worker <- worker
   }
@@ -74,9 +69,10 @@ func pull_workers(c chan string, avaliable_worker chan string) {
 
 func start_worker(worker string, rpcname string, task_args interface{},
                   reply interface{}, avaliable_worker chan string, wg *sync.WaitGroup) {
-    defer wg.Done()
     fmt.Printf("Worker %v is assigned\n", worker)
     call(worker, "Worker.DoTask", task_args, reply)
+    wg.Done()
     fmt.Printf("Putting worker %v in avaliable  ", worker)
     avaliable_worker <- worker
+    //wg.Done()
 }
